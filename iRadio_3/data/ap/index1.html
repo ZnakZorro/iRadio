@@ -1,0 +1,126 @@
+<html lang="pl">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+  <meta charset="utf-8">
+  <title>AP-config</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="HandheldFriendly" content="true">
+  <meta name="mobile-web-app-capable" content="yes"> 
+  <meta name="theme-color" content="#800">
+    <style> 
+      * {font:normal 12pt Verdana;} 
+      textarea {width:97%; min-height:10em; font-size:10pt;}
+      button {font-size: smaller;display: grid;margin: 0.3em;min-width: 20em;max-width: 98%;text-align: left;}
+    </style>
+    
+      </head><body>
+    <h3>AP-config Portal</h3>
+    <button onClick="scanWIFI()" style="text-align:center;">scanWIFI</button><br />
+    <div id="wifi"></div>
+    <form action="http://192.168.31.247/zapis" method="POST" accept-charset="UTF-8"><br>
+      SSID1: <input type="" id="ssid1" name="ssid1" value="znakzorro_plus" maxlength="32"><br /><br />
+      PASS1: <input type="text" id="pass1" name="pass1" value="" maxlength="32"><br /><hr />
+      SSID2: <input type="text" id="ssid2" name="ssid2" value="" maxlength="32"><br /><br />
+      PASS2: <input type="text" id="pass2" name="pass2" value="" maxlength="32"><br /><hr />
+
+     
+      ESP32 name: 
+      <select name = "folder">
+        <option value="" selected>----------</option>
+        <option value="Mowa">Mowa</option>
+        <option value="Muzyka">Muzyka</option>
+        <option value="Jazz">Jazz</option>
+      </select>
+      <br /><br />
+
+
+        <p>Please select your favorite Web language:</p>
+        <input type="radio" id="html" name="lang" value="HTML">
+        <label for="html">HTML</label><br>
+        <input type="radio" id="css" name="lang" value="CSS">
+        <label for="css">CSS</label><br>
+        <input type="radio" id="javascript" name="lang" value="JS">
+        <label for="javascript">JavaScript</label>
+        <br>  
+        <p>Please select your age:</p>
+        <input type="radio" id="age1" name="age" value="30">
+        <label for="age1">0 - 30</label><br>
+        <input type="radio" id="age2" name="age" value="60">
+        <label for="age2">31 - 60</label><br>  
+        <input type="radio" id="age3" name="age" value="100">
+        <label for="age3">61 - 100</label><br><br>
+
+        <input type="submit" value="Submit"> <br />
+
+
+
+    </form>
+    <br />
+    <button onClick="wyslij()">Wyślij post</button>
+    
+    
+
+  <script>
+    let url = "http://192.168.31.247";
+    let nr=1;
+    const checkForError = response => {
+      if (!response.ok) throw Error(response.statusText);
+      return response.text();
+    };
+    const wstaw=(ten)=>{
+        console.log(ten);
+        document.getElementById("ssid"+nr).value=encodeURIComponent(ten.textContent);
+        nr = (nr===1) ? 2:1;        
+        console.log(nr);
+    }
+    
+    const scanWIFI=()=>{
+      fetch(url+"/scan")
+      .then(checkForError)
+      .then(tx => {
+        console.log(tx); 
+        let html = "";
+        let arr = tx.split("\n");
+        arr.forEach((s)=>{
+          console.log(s);
+          html += `<button onClick="wstaw(this)">${s}</button>`;
+        })
+        document.getElementById("wifi").innerHTML = html;
+      })
+      .catch(e => {console.log(e)})
+    }
+
+
+    function wyslij(){
+      let obj={}
+      obj.ssid1 = document.getElementById("ssid1").value;
+      obj.ssid2 = document.getElementById("ssid2").value;
+      obj.pass1 = document.getElementById("pass1").value;
+      obj.pass2 = document.getElementById("pass2").value;
+      console.log(obj)
+        var postOption = {
+            method: 'POST',
+            mode: 'no-cors', // no-cors, *cors, same-origin
+            cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+            credentials: 'omit', // include, *same-origin, omit            
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(obj)
+        }
+            let params ="?ssid1="+obj.ssid1+"&pass1="+obj.pass1+"&ssid2="+obj.ssid2+"&pass2="+obj.pass2
+            fetch(url+"/zapis"+params,postOption)
+            .then(resp => {return resp.text()})
+            .then(ret => {
+                console.log('FETCH ret=',ret);
+                
+            })
+            .catch(err => {console.log(err);});    
+    }
+
+
+
+
+
+
+  </script>
+</body>
+</html>

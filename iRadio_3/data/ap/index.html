@@ -1,0 +1,81 @@
+<html lang="pl">
+<head>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+  <meta charset="utf-8">
+  <title>AP-config</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="HandheldFriendly" content="true">
+  <meta name="mobile-web-app-capable" content="yes"> 
+  <meta name="theme-color" content="#800">
+    <style> 
+      * {font:normal 12pt Verdana;} 
+      textarea {width:97%; min-height:10em; font-size:10pt;}
+      button {font-size: smaller;display: grid;margin: 0.3em;min-width: 20em;max-width: 98%;text-align: left;}
+    </style>
+    
+      </head><body>
+    <h3>AP-config Portal</h3>
+    <button onClick="scanWIFI()" style="text-align:center;">scanWIFI</button><br />
+    <div id="wifi"></div>
+    <form action="/zapis" method="POST" accept-charset="UTF-8"><br>
+      SSID1: <input type="text" id="ssid1" name="ssid1" value=""><br /><br />
+      PASS1: <input type="text" id="pass1" name="pass1" value=""><br /><hr />
+      SSID2: <input type="text" id="ssid2" name="ssid2" value=""><br /><br />
+      PASS2: <input type="text" id="pass2" name="pass2" value=""><br /><hr />
+
+     
+      Music folder: 
+      <select name = "musicFolder">
+        <option value="" selected>----------</option>
+        <option value="Muzyka">Muzyka</option>
+        <option value="Jazz">Jazz</option>
+        <option value="Classic">Classic</option>
+        <option value="Kids">Kids</option>
+      </select>
+      <br /><br /><br />
+        <input type="submit" value="Zapisz" > <br />
+
+
+
+    </form>
+    <br />
+    
+    
+    
+
+  <script>
+    let url = "";
+    let nr=1;
+    const checkForError = response => {
+      if (!response.ok) throw Error(response.statusText);
+      return response.text();
+    };
+    const wstaw=(ten)=>{
+        console.log(ten);
+        document.getElementById("ssid"+nr).value=encodeURIComponent(ten.textContent);
+        nr = (nr===1) ? 2:1;        
+        console.log(nr);
+    }
+    
+    const scanWIFI=()=>{
+      fetch(url+"/scan")
+      .then(checkForError)
+      .then(tx => {
+        console.log(tx); 
+        let html = "";
+        let arr = tx.split("\n");
+        arr.forEach((s)=>{
+          console.log(s);
+          html += `<button onClick="wstaw(this)">${s}</button>`;
+        })
+        document.getElementById("wifi").innerHTML = html;
+      })
+      .catch(e => {console.log(e)})
+    }
+
+
+
+
+  </script>
+</body>
+</html>
