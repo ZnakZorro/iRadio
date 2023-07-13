@@ -2,6 +2,13 @@
 sudo chmod a+rw /dev/ttyUSB0
 sudo chmod a+rw /dev/ttyACM0
 Switches 01100    0=down; 1=up;
+
+Instrumental_flac_7
+Jazzy_flac_284
+Modal_flac_220
+Vocal_flac_10
+MP3_mp3_280
+
 */
 
 #define CODEDIR "/home/znak/Arduino/CODY/ES8388/A1S_ES8388_RND_NO_WiFi/A1S_ES8388_RND_NO_WiFi_05.ino"
@@ -153,7 +160,23 @@ void getDirectory(fs::FS &fs) {
 }
 
 /*dddddddddddddddddddddddddddddddddddddddddddddddddddddddd*/
-
+void parseFolderName(String fname){
+  int first = fname.indexOf("_");
+  int last  = fname.lastIndexOf("_");
+  int len   = fname.length();
+  
+  Serial.print(len);Serial.print(" ______ "); Serial.print(fname); Serial.print(" fi=");Serial.print(first);Serial.print(" ls=");Serial.println(last);
+  String name  = fname.substring(0      , first);
+  String ext   = fname.substring(first+1, last);
+  String count = fname.substring(last+1 , len);
+  int maxCount = count.toInt();
+  Serial.println(fname);
+  Serial.println(len);
+  Serial.println(name);
+  Serial.println(ext);
+  Serial.println(count);
+  Serial.println(maxCount);
+}
 
 void setup(){
     Serial.begin(115200);
@@ -184,6 +207,7 @@ void setup(){
     Serial.println("ddddddd*************************");
     for(int i = 0; i < nameFolders.size(); i++){
       Serial.print(i);Serial.print(". ");Serial.println(nameFolders[i]);
+      parseFolderName(nameFolders[i]);
     }
     Serial.println("ddddddd*************************");
     readFile(SD, "/info.txt");
@@ -239,13 +263,13 @@ void buttons_loop(){
     Serial.print(k5);
     Serial.println(k6);*/
     if (k3 == LOW) {
-        musicFolder = "/flac_220/";
+        musicFolder = "/Modal_flac_220/";
         musicMax    = 220;
         musicExt    = ".flac";
         playRandomMp3();
     }
     if (k4 == LOW) {
-        musicFolder = "/flac_284/";
+        musicFolder = "/Jazzy_flac_284/";
         musicMax    = 284;
         musicExt    = ".flac";
         playRandomMp3();
