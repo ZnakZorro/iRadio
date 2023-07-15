@@ -69,16 +69,23 @@ String zapis[5] = { "/mp3/", "100", "mp3", "ssid", "pass"};
 int countFolders = 0;
 int actualFolder = 0;
 int lastFolder   = 0;
+//String actualTitle = "";
+//String actualName  = ""
 
 unsigned long timeMillis = 0;
 int counterLoop = 0;
 
+vector<String> nameFolders;
+vector<infoFOLDER> allFolders;
 
+infoSongType infoSong;
+/*
+  char *TITLE;
+  char *ALBUM;
+  char *ARTIST;
+  int   DURATION;
+ */
 //infoSTRUCT infoBit={0,0,0,0,"","","","","",""};
-                
-                
-                
-               
  
 ES8388 es;
 Audio audio;
@@ -87,8 +94,6 @@ Audio audio;
 Preferences preferences;
 const char* preferencesName = "es8388RND3";
 
-vector<String> nameFolders;
-vector<infoFOLDER> allFolders;
 
  void savePreferences(){
      preferences.begin(preferencesName, false);
@@ -106,6 +111,23 @@ vector<infoFOLDER> allFolders;
      Serial.printf("read cur_vol=%d musicFolder=%s\n",cur_volume,musicFolder.c_str());     
 } 
 
+String humanTime(int sek){
+      int minut = sek/60;
+      sek = sek - (minut*60);
+      String zeresek="";
+      if (sek<10) zeresek="0";
+      return String(minut)+":"+zeresek+String(sek);
+}
+void printInfoSong(){
+  //Serial.println("++++++++++ printInfoSong +++++++++++++ ");
+  String title = nameFolders[actualFolder];
+  Serial.print("PATH:  ");Serial.print(title);Serial.print("; ");
+       Serial.print("ALBUM:  ");Serial.print(infoSong.ALBUM);Serial.print("; ");     
+       Serial.print("TITLE:  ");Serial.print(infoSong.TITLE);Serial.print("; ");
+       Serial.print("ARTIST: ");Serial.print(infoSong.ARTIST);Serial.print("; ");
+       Serial.print("DURAT:  ");Serial.print(humanTime(infoSong.DURATION));Serial.print("; ");
+       Serial.println();
+}
 void printInfo(){
   Serial.println("************* random MUSIC info ************* ");
     Serial.print("@musicFolder=");          Serial.println(musicFolder);
@@ -129,7 +151,11 @@ void printInfo(){
 //----------------------------------------------------------------------------------------------------------------------
 
 void playRandomMusic(){
-  Serial.println("ffffffffffffffffffffffffffffffffffffff");
+  Serial.println("\nRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR");
+      infoSong.DURATION = 0;
+      infoSong.TITLE    = "";
+      infoSong.ALBUM    = "";
+      infoSong.ARTIST   = "";
     //printInfo();
           actualFolder = random(1,lastFolder);
           infoFOLDER info = parseFolderName(actualFolder);
@@ -142,7 +168,7 @@ void playRandomMusic(){
     int randomFolder = random(1,lastFolder);
     int randomNumber = random(1,info.LastNumber);
     String filename = DS+info.Path +DS+String(randomNumber) + "."+info.Extention;
-    log_i("actualFolder= %d, file=%s\n",actualFolder,filename.c_str());
+    //log_i("actualFolder= %d, file=%s\n",actualFolder,filename.c_str());
     //int randomNumber = random(1,musicMax);
     //String filename = musicFolder + String(randomNumber) + musicExt;
     Serial.print("***.........rndMusic="); Serial.println(filename);
@@ -282,6 +308,7 @@ void setup(){
     audio.setPinout(I2S_BCLK, I2S_LRCK, I2S_SDOUT);
 	  audio.i2s_mclk_pin_select(I2S_MCLK);
     audio.setVolume(cur_volume); // 0...21
+    //audio.setTone(4,-9,-6);
     playRandomMusic();
     //randomSeed(analogRead(0));
 }
@@ -333,12 +360,13 @@ void loop(){
         if (counterLoop % 150 == 0){
           int nowTime = (millis() - timeMillis) / (60*1000);
           bool run = audio.isRunning();
-          Serial.printf("### run=%d nowTime=%d \n", run, nowTime);
-          
+          String title = nameFolders[actualFolder];
+          Serial.printf("### run=%d nowTime=%d title=%s \n", run, nowTime, title.c_str());
+          printInfoSong();
         }
         esp_task_wdt_reset();
         if (!audio.isRunning()){
-          for (int i=0; i<3; i++) Serial.println("\n\n??????????????????????????????????????\n\n");
+          for (int i=0; i<3; i++) Serial.println("??????????????????????????????????????");
           playRandomMusic();
         }
     }
@@ -373,17 +401,35 @@ void notifyKeyVal(String key, String val){
       playRandomMusic();    
     }
     if (key=="Reading_file"){
-      log_i("\nReading_file = %s\n",val);      
+      //log_i("\nReading_file = %s\n",val);      
     }
     if (key=="StreamTitle"){
       val.replace("StreamTitle ","");
       String StreamTitle = rep(val.c_str());
       log_i("StreamTitle = %s\n",StreamTitle);      
-    }
+   }
    if (key=="SampleRate")    {
       val.replace("SampleRate: ","");
-      log_i("SampleRate = %d\n",val.toInt());
+      //log_i("SampleRate = %d\n",val.toInt());
+      int bitRate = val.toInt();
+      if (bitRate>0) Serial.printf("$_SampleRate= %d kHz\n", bitRate);
+   }
+   if (key=="BitRate")    {
+      val.replace("BitRate: ","");
+      int bitRate = val.toInt()/1000;
+      Serial.printf("$_BitRate= %d kHz\n", bitRate);
+      printInfoSong();
     }
+   if (key=="audio_file_duration")    {
+      val.replace("audio file duration: ","");
+      //int sek = val.toInt();
+      //int min = sek/60;
+      //sek = sek - (min*60);
+      String sTime = humanTime(val.toInt());
+      infoSong.DURATION = val.toInt();
+      Serial.printf("$_audioDuration = %s\n",sTime.c_str());
+   }
+    
 }
 
 // optional
@@ -392,21 +438,42 @@ void audio_info(const char *info){
     Serial.println(info);
     if(strncmp(info, "StreamTitle"       , 7) ==0)  {notifyKeyVal("StreamTitle",String(info));}   
     if(strncmp(info, "SampleRate"        , 7) ==0)  {notifyKeyVal("SampleRate",String(info));}
-    
+    if(strncmp(info, "audio file duration"        , 5) ==0)  {notifyKeyVal("audio_file_duration",String(info));}
+    if(strncmp(info, "BitRate",7) ==0)       {notifyKeyVal("BitRate",String(info));}
     if(strncmp(info, "syncword not found",12) ==0)  {notifyKeyVal("syncword_not_found",String(info));}
     if(strncmp(info, "FLAC decode error" ,15) ==0)  {notifyKeyVal("error",String(info));}
     if(strncmp(info, "Reading file"      ,10) ==0)  {
       //Serial.print(" r= ");Serial.println(rep(String(info)));
       String r = String(info);
       String rr = rep(r);
-      Serial.print("rr= ");Serial.println(rr);
-      notifyKeyVal("Reading_file",rep(String(info)));
+      Serial.print("Reading file= ");Serial.println(rr);
+      //notifyKeyVal("Reading_file",String(rr));
     }
     
     //FLAC decode error -1 : BLOCKSIZE TOO BIG
 }
 void audio_id3data(const char *info){  //id3 metadata
     Serial.print("id3data     ");Serial.println(info);
+    if(strncmp(info, "TITLE"       , 5) ==0){
+        String val = String(info);
+        val.replace("TITLE: ",""); 
+        infoSong.TITLE    = val;
+        Serial.println(infoSong.TITLE);
+    }
+    if(strncmp(info, "ARTIST"       , 5) ==0){
+        String val = String(info);         
+        val.replace("ARTIST: ","");
+        infoSong.ARTIST    = val;
+        Serial.println(infoSong.ARTIST);
+    }
+    if(strncmp(info, "ALBUM"       , 5) ==0){
+        String val = String(info);         
+        val.replace("ALBUM: ","");
+        infoSong.ALBUM    = val;
+        Serial.println(infoSong.ALBUM);
+    }
+
+   
 }
 void audio_eof_mp3(const char *info){  //end of file
     Serial.print("eof_mp3     ");Serial.println(info);
@@ -450,7 +517,10 @@ void SerialListener(){
         if (r == "4") {actualFolder=4;playRandomMusic();}
         if (r == "5") {actualFolder=5;playRandomMusic();}
     }
-}    
+}  
+
+
+  
 /*
 Szkic używa 891665 bajtów (68%) pamięci programu. Maksimum to 1310720 bajtów.
 Zmienne globalne używają 31192 bajtów (9%) pamięci dynamicznej, pozostawiając 296488 bajtów dla zmiennych lokalnych. Maksimum to 327680 bajtów.
